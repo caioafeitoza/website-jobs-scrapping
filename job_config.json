@@ -1,0 +1,14 @@
+{
+  "companies": [
+    {
+      "name": "Careem",
+      "api_url": "https://boards-api.greenhouse.io/v1/boards/careem/jobs/",
+      "api_title_field": "title",
+      "api_department_field": "metadata.4.value",
+      "api_location_field": "location.name",
+      "api_link_field": "absolute_url",
+      "departments": ["Product", "Engineering", "Data"],
+      "locations": ["Dubai"]
+    }
+  ]
+}
