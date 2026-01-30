@@ -36,7 +36,7 @@ jobs:
       # Step 4: Run the monitor script
       - name: Run job monitor
         run: |
-          python monitor.py
+          python scrapping.py
       
       # Step 5: Commit and push changes if there are any
       - name: Commit updated jobs
