@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 
 
@@ -11,7 +11,7 @@ class JobMonitor:
         """Initialize the job monitor"""
         self.config = self.load_config(config_file)
         self.jobs_file = 'tracked_jobs.json'
-        self.previous_jobs = self.load_previous_jobs()
+        self.existing_data = self.load_existing_data()
     
     def load_config(self, config_file):
         """Load monitoring configuration"""
@@ -20,17 +20,72 @@ class JobMonitor:
                 return json.load(f)
         return {"companies": []}
     
-    def load_previous_jobs(self):
-        """Load previously seen jobs"""
-        if os.path.exists(self.jobs_file):
+    def load_existing_data(self):
+        """Load existing job data with migration from old format"""
+        if not os.path.exists(self.jobs_file):
+            return {
+                "jobs": [],
+                "metadata": {
+                    "last_updated": None,
+                    "total_jobs": 0,
+                    "companies_count": 0,
+                    "departments_count": 0
+                }
+            }
+        
+        try:
             with open(self.jobs_file, 'r') as f:
-                return json.load(f)
-        return {}
+                data = json.load(f)
+            
+            # Check if old format (flat dictionary with hash keys)
+            if isinstance(data, dict) and "jobs" not in data:
+                print("📦 Migrating from old format to new format...")
+                migrated_jobs = []
+                
+                for job_id, job_data in data.items():
+                    # Convert old format to new format
+                    job = {
+                        "id": job_id,
+                        **job_data,
+                        "is_active": True,
+                        "is_new": False,
+                        "last_seen": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                    migrated_jobs.append(job)
+                
+                return {
+                    "jobs": migrated_jobs,
+                    "metadata": {
+                        "last_updated": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        "total_jobs": len(migrated_jobs),
+                        "companies_count": len(set(j.get('company') for j in migrated_jobs)),
+                        "departments_count": len(set(j.get('department') for j in migrated_jobs))
+                    }
+                }
+            
+            # Already in new format
+            return data
+            
+        except Exception as e:
+            print(f"❌ Error loading data: {e}")
+            return {
+                "jobs": [],
+                "metadata": {
+                    "last_updated": None,
+                    "total_jobs": 0,
+                    "companies_count": 0,
+                    "departments_count": 0
+                }
+            }
     
-    def save_jobs(self):
-        """Save current job state"""
-        with open(self.jobs_file, 'w') as f:
-            json.dump(self.previous_jobs, f, indent=2)
+    def save_data(self):
+        """Save job data in new format"""
+        try:
+            with open(self.jobs_file, 'w') as f:
+                json.dump(self.existing_data, f, indent=2)
+            print(f"💾 Saved {len(self.existing_data['jobs'])} jobs to {self.jobs_file}")
+        except Exception as e:
+            print(f"❌ Error saving data: {e}")
     
     def get_job_id(self, job):
         """Create unique ID for a job"""
@@ -68,6 +123,15 @@ class JobMonitor:
         )
         
         return dept_match and loc_match
+    
+    def is_job_new(self, found_date):
+        """Check if job was found less than 7 days ago"""
+        try:
+            found = datetime.strptime(found_date, '%Y-%m-%d %H:%M:%S')
+            days_old = (datetime.now() - found).days
+            return days_old < 7
+        except:
+            return False
     
     def fetch_jobs_from_api(self, company_config):
         """Fetch jobs from JSON API"""
@@ -122,14 +186,15 @@ class JobMonitor:
                     
                     # Filter by department and location
                     if self.matches_filters(department, location, company_config):
-                        jobs.append({
+                        job = {
                             'company': company_config['name'],
                             'title': str(title),
                             'department': str(department),
                             'location': str(location),
                             'link': link,
                             'found_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        })
+                        }
+                        jobs.append(job)
                 
                 except Exception as e:
                     print(f"⚠️ Error parsing job: {e}")
@@ -189,14 +254,15 @@ class JobMonitor:
                     
                     # Filter
                     if self.matches_filters(department, '', company_config):
-                        jobs.append({
+                        job = {
                             'company': company_config['name'],
                             'title': title,
                             'department': department,
                             'location': '',
                             'link': link,
                             'found_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                        })
+                        }
+                        jobs.append(job)
                 
                 except Exception as e:
                     continue
@@ -216,45 +282,94 @@ class JobMonitor:
             return self.fetch_jobs_from_html(company_config)
     
     def check_for_new_jobs(self):
-        """Main monitoring loop"""
+        """Main monitoring loop with enhanced tracking"""
         print("=" * 70)
         print(f"🔍 JOB MONITOR - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("=" * 70)
         
-        all_new_jobs = []
+        # Get current jobs from existing data
+        existing_jobs_dict = {job['id']: job for job in self.existing_data['jobs']}
         
+        # Track which jobs we've seen in this run
+        current_run_job_ids = set()
+        
+        all_new_jobs = []
+        all_current_jobs = []
+        
+        # Fetch jobs from all companies
         for company in self.config['companies']:
             current_jobs = self.fetch_jobs(company)
             
-            new_jobs = []
             for job in current_jobs:
                 job_id = self.get_job_id(job)
-                if job_id not in self.previous_jobs:
-                    new_jobs.append(job)
-                    self.previous_jobs[job_id] = job
-            
-            if new_jobs:
-                print(f"\n🚨 {len(new_jobs)} NEW JOB(S) at {company['name']}!")
-                print("-" * 70)
-                for job in new_jobs:
-                    print(f"\n  📋 {job['title']}")
+                current_run_job_ids.add(job_id)
+                
+                if job_id in existing_jobs_dict:
+                    # Job already exists - update last_seen
+                    existing_job = existing_jobs_dict[job_id]
+                    existing_job['last_seen'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    existing_job['is_active'] = True
+                    existing_job['is_new'] = self.is_job_new(existing_job['found_date'])
+                    all_current_jobs.append(existing_job)
+                else:
+                    # New job found
+                    new_job = {
+                        'id': job_id,
+                        **job,
+                        'is_active': True,
+                        'is_new': True,
+                        'last_seen': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                    all_new_jobs.append(new_job)
+                    all_current_jobs.append(new_job)
+                    print(f"\n🆕 NEW JOB at {job['company']}!")
+                    print(f"  📋 {job['title']}")
                     print(f"  🏢 {job['department']}", end='')
                     if job.get('location'):
                         print(f" - {job['location']}", end='')
                     print()
                     if job.get('link'):
                         print(f"  🔗 {job['link']}")
-                all_new_jobs.extend(new_jobs)
-            else:
-                print(f"✓ No new jobs at {company['name']}")
         
-        self.save_jobs()
+        # Mark jobs as inactive if they weren't seen in this run
+        for job_id, job in existing_jobs_dict.items():
+            if job_id not in current_run_job_ids:
+                if job.get('is_active', True):
+                    job['is_active'] = False
+                    print(f"\n⚠️ Job no longer available: {job['title']} at {job['company']}")
+                job['is_new'] = False
+                all_current_jobs.append(job)
         
+        # Update metadata
+        companies = set(job['company'] for job in all_current_jobs if job.get('is_active', True))
+        departments = set(job['department'] for job in all_current_jobs if job.get('is_active', True))
+        active_jobs = [job for job in all_current_jobs if job.get('is_active', True)]
+        
+        self.existing_data = {
+            "jobs": all_current_jobs,
+            "metadata": {
+                "last_updated": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                "total_jobs": len(all_current_jobs),
+                "active_jobs": len(active_jobs),
+                "inactive_jobs": len(all_current_jobs) - len(active_jobs),
+                "new_jobs": len([j for j in all_current_jobs if j.get('is_new', False)]),
+                "companies_count": len(companies),
+                "departments_count": len(departments)
+            }
+        }
+        
+        # Save updated data
+        self.save_data()
+        
+        # Print summary
         print("\n" + "=" * 70)
-        if all_new_jobs:
-            print(f"🎯 TOTAL: {len(all_new_jobs)} new job(s)")
-        else:
-            print("✅ No new jobs found")
+        print("📊 SUMMARY")
+        print("=" * 70)
+        print(f"✅ Active jobs: {self.existing_data['metadata']['active_jobs']}")
+        print(f"🆕 New jobs found: {len(all_new_jobs)}")
+        print(f"⚠️ Inactive jobs: {self.existing_data['metadata']['inactive_jobs']}")
+        print(f"🏢 Companies: {self.existing_data['metadata']['companies_count']}")
+        print(f"📁 Departments: {self.existing_data['metadata']['departments_count']}")
         print("=" * 70)
         
         return all_new_jobs
