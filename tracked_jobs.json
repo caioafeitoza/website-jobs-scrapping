@@ -10,19 +10,7 @@
       "found_date": "2026-04-09 12:57:28",
       "is_active": true,
       "is_new": false,
-      "last_seen": "2026-05-12 19:26:45"
-    },
-    {
-      "id": "72ab920fad4fedbd230e291519149d40",
-      "company": "Careem",
-      "title": "Senior Data Scientist II",
-      "department": "Data science",
-      "location": "Dubai, United Arab Emirates",
-      "link": "https://boards.greenhouse.io/careem/jobs/7293447002?gh_jid=7293447002",
-      "found_date": "2026-01-30 08:12:14",
-      "is_active": true,
-      "is_new": false,
-      "last_seen": "2026-05-12 19:26:46"
+      "last_seen": "2026-05-13 02:02:11"
     },
     {
       "id": "a6feecb92d23b630318b90a010c5e2e0",
@@ -33,6 +21,18 @@
       "link": "https://boards.greenhouse.io/careem/jobs/8148098002?gh_jid=8148098002",
       "found_date": "2026-01-30 08:12:14",
       "is_active": true,
+      "is_new": false,
+      "last_seen": "2026-05-13 02:02:11"
+    },
+    {
+      "id": "72ab920fad4fedbd230e291519149d40",
+      "company": "Careem",
+      "title": "Senior Data Scientist II",
+      "department": "Data science",
+      "location": "Dubai, United Arab Emirates",
+      "link": "https://boards.greenhouse.io/careem/jobs/7293447002?gh_jid=7293447002",
+      "found_date": "2026-01-30 08:12:14",
+      "is_active": false,
       "is_new": false,
       "last_seen": "2026-05-12 19:26:46"
     },
@@ -290,12 +290,12 @@
     }
   ],
   "metadata": {
-    "last_updated": "2026-05-12 19:26:46",
+    "last_updated": "2026-05-13 02:02:11",
     "total_jobs": 24,
-    "active_jobs": 3,
-    "inactive_jobs": 21,
+    "active_jobs": 2,
+    "inactive_jobs": 22,
     "new_jobs": 0,
     "companies_count": 1,
-    "departments_count": 2
+    "departments_count": 1
   }
 }
