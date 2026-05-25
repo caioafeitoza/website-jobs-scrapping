@@ -9,8 +9,8 @@
       "link": "https://boards.greenhouse.io/careem/jobs/8148098002?gh_jid=8148098002",
       "found_date": "2026-05-18 09:37:10",
       "is_active": true,
-      "is_new": true,
-      "last_seen": "2026-05-25 02:14:29"
+      "is_new": false,
+      "last_seen": "2026-05-25 09:45:44"
     },
     {
       "id": "536311715435eddc889ffbf107d041d4",
@@ -22,7 +22,7 @@
       "found_date": "2026-04-09 12:57:28",
       "is_active": true,
       "is_new": false,
-      "last_seen": "2026-05-25 02:14:29"
+      "last_seen": "2026-05-25 09:45:44"
     },
     {
       "id": "a6feecb92d23b630318b90a010c5e2e0",
@@ -302,11 +302,11 @@
     }
   ],
   "metadata": {
-    "last_updated": "2026-05-25 02:14:29",
+    "last_updated": "2026-05-25 09:45:44",
     "total_jobs": 25,
     "active_jobs": 2,
     "inactive_jobs": 23,
-    "new_jobs": 1,
+    "new_jobs": 0,
     "companies_count": 1,
     "departments_count": 1
   }
