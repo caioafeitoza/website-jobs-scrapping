@@ -10,7 +10,7 @@
       "found_date": "2026-05-18 09:37:10",
       "is_active": true,
       "is_new": false,
-      "last_seen": "2026-06-09 14:20:00"
+      "last_seen": "2026-06-09 19:54:41"
     },
     {
       "id": "536311715435eddc889ffbf107d041d4",
@@ -22,7 +22,7 @@
       "found_date": "2026-04-09 12:57:28",
       "is_active": true,
       "is_new": false,
-      "last_seen": "2026-06-09 14:20:00"
+      "last_seen": "2026-06-09 19:54:41"
     },
     {
       "id": "a6feecb92d23b630318b90a010c5e2e0",
@@ -302,7 +302,7 @@
     }
   ],
   "metadata": {
-    "last_updated": "2026-06-09 14:20:00",
+    "last_updated": "2026-06-09 19:54:41",
     "total_jobs": 25,
     "active_jobs": 2,
     "inactive_jobs": 23,
